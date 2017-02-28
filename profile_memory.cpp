@@ -13,7 +13,7 @@ int main(int argc, char const *argv[]) {
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
 
-  string command = "python test.py";
+  string command = (argc > 1)  ? argv[1] : "python test.py";
 
   char* c_command = new char[command.length() + 1];
 
@@ -49,7 +49,7 @@ int main(int argc, char const *argv[]) {
           if (max_memory < current_memory) {
             max_memory = current_memory;
           }
-          
+
         }
 
         Sleep(500);
