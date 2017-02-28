@@ -36,12 +36,20 @@ int main(int argc, char const *argv[]) {
   }
 
   DWORD exit_code;
+
+  SIZE_T max_memory = 0;
+
   while (true) {
     if (GetExitCodeProcess(pi.hProcess, &exit_code)) {
       if (exit_code == STILL_ACTIVE) {
         PROCESS_MEMORY_COUNTERS pmc;
         if (GetProcessMemoryInfo(pi.hProcess, &pmc, sizeof(pmc))) {
-          cout << " Memory: " << (pmc.WorkingSetSize / 1024.0) << " KB" << endl;
+          SIZE_T current_memory = pmc.WorkingSetSize;
+
+          if (max_memory < current_memory) {
+            max_memory = current_memory;
+          }
+          
         }
 
         Sleep(500);
@@ -53,6 +61,8 @@ int main(int argc, char const *argv[]) {
       cout << "Error getting exit code\n";
     }
   }
+
+  cout << "MAX MEMORY: " << (max_memory / 1024) << " KB" << endl;
 
   CloseHandle(pi.hThread);
   CloseHandle(pi.hProcess);
