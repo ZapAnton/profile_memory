@@ -5,42 +5,7 @@
 
 using namespace std;
 
-void print_memory_info(DWORD &processID) {
-  PROCESS_MEMORY_COUNTERS pmc;
-
-  HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                                FALSE,
-                                processID);
-  if (hProcess == NULL) {
-    return;
-  }
-
-  string process_name;
-
-  TCHAR Buffer[MAX_PATH];
-
-  if (GetModuleFileNameEx(hProcess, 0, Buffer, MAX_PATH)) {
-    process_name = Buffer;
-  }
-
-  if (GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc))) {
-    cout << "Process: " << process_name << " Memory: " << (pmc.WorkingSetSize / 1024.0) << " KB" << endl;
-  }
-
-  CloseHandle(hProcess);
-}
-
 int main(int argc, char const *argv[]) {
-  // DWORD aProcesses[1024], cbNeeded;
-  //
-  // if (!EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded)) {
-  //     return 1;
-  // }
-  //
-  // for (auto &processID: aProcesses) {
-  //   print_memory_info(processID);
-  // }
-
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
 
@@ -70,12 +35,27 @@ int main(int argc, char const *argv[]) {
     return -1;
   }
 
-  print_memory_info(pi.dwProcessId);
+  DWORD exit_code;
+  while (true) {
+    if (GetExitCodeProcess(pi.hProcess, &exit_code)) {
+      if (exit_code == STILL_ACTIVE) {
+        PROCESS_MEMORY_COUNTERS pmc;
+        if (GetProcessMemoryInfo(pi.hProcess, &pmc, sizeof(pmc))) {
+          cout << " Memory: " << (pmc.WorkingSetSize / 1024.0) << " KB" << endl;
+        }
 
-  WaitForSingleObject(pi.hProcess, INFINITE);
+        Sleep(500);
+      } else {
+        cout << "Process has ended\n";
+        break;
+      }
+    } else {
+      cout << "Error getting exit code\n";
+    }
+  }
 
-  CloseHandle( pi.hProcess );
-  CloseHandle( pi.hThread );
+  CloseHandle(pi.hThread);
+  CloseHandle(pi.hProcess);
 
   delete[] c_command;
 
